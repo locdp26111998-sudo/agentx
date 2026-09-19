@@ -1,0 +1,55 @@
+---
+description: Ngữ cảnh & luật dự án agentx (App 1 - host quản lý agent CLI)
+alwaysApply: true
+---
+
+# Dự án: agentx (App 1 — host/quản đốc quản lý agent CLI)
+
+## agentx là gì
+- App quản lý & điều khiển agent để TRẢ LỜI KHÁCH qua kênh (Fanpage/Zalo/trang bán hàng).
+- Vai "quản đốc": cấu hình agent theo từng khách; điều khiển chung cả agent CLI (Claude Code, opencode, Codex) lẫn GoClaw.
+- Ngôn ngữ: Go. Module: `agentx`. Máy dev: Windows, lệnh chạy trong PowerShell.
+
+## Nguyên tắc động cơ (QUAN TRỌNG — KHÔNG lấy GoClaw làm trung tâm)
+- Agent CLI = "não trần": 1 lượt suy nghĩ, không sẵn kênh/đa khách/trí nhớ → agentx tự lắp hồn+tool+trí nhớ+kênh ⇒ adapter DÀY.
+- GoClaw = nền đủ (có sẵn agent-config, kênh, memory 3 tầng, đa tenant; bên trong tự dùng CLI làm não) → agentx chỉ ra lệnh tầng trên ⇒ adapter MỎNG (qua HTTP API kiểu OpenAI: POST /v1/chat/completions, model = "goclaw:<agent-key>").
+- Cả hai cắm sau CÙNG một interface `Engine` trong agentx.
+
+## Kiến trúc 6 khối
+1. inbox — cổng nhận việc (webhook kênh + adapter kênh)
+2. router — tin của khách nào → agent nào
+3. ticket — soạn phiếu giao việc (hồn + việc + bối cảnh + giới hạn)
+4. store — kho hồ sơ (hồn agent + trí nhớ từng khách = DB)
+5. engine — gọi & trông CLI chạy ngầm (hàng đợi, watchdog dựng lại khi lỗi). Có interface `Engine` + adapter mỗi động cơ.
+6. guard — soát trả lời, chặn việc cấm, sandbox.
+
+## Cây thư mục đích (làm DẦN, không dựng hết 1 lần)
+agentx/
+├── go.mod
+├── cmd/server/main.go
+├── internal/{inbox,router,ticket,store,guard}/
+│   └── engine/{engine.go, claudecode.go, codex.go, goclaw.go}
+└── configs/agents/   # mỗi khách 1 file .yaml
+
+## Agent = config (không code lại cho mỗi khách)
+- Tĩnh (trong file config): hồn (tính cách/nhiệm vụ/giọng) + giới hạn + tool/skill + kiến thức riêng của khách + chọn động cơ CLI + gắn khách/kênh.
+- Động (ở DB, KHÔNG trong file): trí nhớ hội thoại theo từng khách cuối, dùng `--resume <session_id>`.
+
+## Lộ trình giai đoạn
+- GĐ1 (đang làm) — lát cắt dọc: 1 kênh + 1 agent + 1 khách, tin đi trọn vòng (nhận → agent CLI → trả lời). Dựng bản mỏng cmd/server + engine/claudecode + ticket.
+- GĐ2 — đa khách + store + memory (--resume).
+- GĐ3 — frontend/thương hiệu + kênh chính danh (Zalo OA/WhatsApp Business/Fanpage) + guard nghiêm.
+- GĐ4 — thêm động cơ qua adapter (Codex/opencode/GoClaw) + use case dựng video.
+
+## Cách gọi Claude Code (ĐÃ TRA DOC CHÍNH THỨC — theo đúng, KHÔNG tự chế flag)
+- Chạy ngầm: claude -p "<câu hỏi>" --output-format json
+- JSON trả về: câu trả lời ở field `result`, mã phiên ở field `session_id`.
+- Nối trí nhớ: --resume <session_id>
+- KHÔNG dùng --bare: máy đang đăng nhập Claude Pro (OAuth); --bare không đọc login subscription mà đòi ANTHROPIC_API_KEY → hỏng.
+- exit code 0 = ok; khác 0 = lỗi (đọc stderr).
+
+## Luật làm việc cho Cursor
+- Viết Go idiomatic, đơn giản, dễ đọc; comment bằng tiếng Việt.
+- Chỉ làm trong phạm vi giai đoạn hiện tại; KHÔNG tự nhảy sang khối/giai đoạn sau.
+- KHÔNG bịa flag/cú pháp CLI — chỉ dùng mục "Cách gọi Claude Code" ở trên; thiếu thì hỏi lại.
+- Việc lớn: lên plan để review trước khi code.

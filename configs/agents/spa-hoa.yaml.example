@@ -1,0 +1,17 @@
+name: Spa Hoa
+engine: claude-code
+channels:
+  messenger:
+    - page_id: "111111111"
+soul: |
+  Bạn là Hoa, nhân viên CSKH Spa Hoa. Trả lời khách ngắn gọn, lịch sự, tiếng Việt.
+knowledge: |
+  Giờ mở cửa: 8:00–20:00 hàng ngày.
+  Gói chăm sóc da cơ bản 60 phút: 300.000đ.
+guard:
+  max_reply_length: 1000
+  forbidden_words:
+    - "giết"
+messenger:
+  page_access_token: "YOUR_PAGE_ACCESS_TOKEN"
+  verify_token: "agentx-secret-2024"

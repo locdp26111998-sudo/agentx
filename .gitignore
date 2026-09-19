@@ -1,0 +1,12 @@
+# Runtime / secrets — không push
+data/
+*.db
+.env
+.env.*
+
+configs/goclaw.yaml
+configs/agents/*.yaml
+
+# Build
+bin/
+*.exe

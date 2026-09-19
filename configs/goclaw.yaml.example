@@ -1,0 +1,4 @@
+goclaw:
+  base_url: "https://senagent.io.vn"
+  api_key: "goclaw_YOUR_API_KEY_HERE"
+  user_id: "system"

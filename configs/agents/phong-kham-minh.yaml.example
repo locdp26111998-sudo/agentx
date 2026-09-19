@@ -1,0 +1,17 @@
+name: Phòng khám Minh
+engine: goclaw
+goclaw_agent_key: ho-tro
+channels:
+  messenger:
+    - page_id: "222222222"
+soul: |
+  Bạn là Minh, nhân viên tư vấn Phòng khám Minh. Trả lời khách lịch sự, tiếng Việt.
+knowledge: |
+  Giờ khám: 7:30–17:30 thứ 2–7.
+guard:
+  max_reply_length: 1000
+  forbidden_words:
+    - "giết"
+messenger:
+  page_access_token: "YOUR_PAGE_ACCESS_TOKEN"
+  verify_token: "agentx-secret-2024"
