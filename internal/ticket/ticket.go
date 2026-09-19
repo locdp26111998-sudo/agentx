@@ -3,6 +3,7 @@ package ticket
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"agentx/internal/guard"
@@ -61,7 +62,8 @@ type MessengerSettings struct {
 
 // Ticket soạn prompt từ config agent.
 type Ticket struct {
-	cfg agentConfig
+	cfg     agentConfig
+	agentID string
 }
 
 // Load đọc file YAML agent.
@@ -76,7 +78,13 @@ func Load(path string) (*Ticket, error) {
 		return nil, fmt.Errorf("parse YAML: %w", err)
 	}
 
-	return &Ticket{cfg: cfg}, nil
+	id := strings.TrimSuffix(filepath.Base(path), ".yaml")
+	return &Ticket{cfg: cfg, agentID: id}, nil
+}
+
+// AgentID trả id agent (tên file không .yaml).
+func (t *Ticket) AgentID() string {
+	return t.agentID
 }
 
 // Name trả tên hiển thị agent.
@@ -123,12 +131,13 @@ func (t *Ticket) Compose(userText string) Prompt {
 	}
 }
 
-// MessengerSettings trả credential Messenger từ YAML agent.
+// MessengerSettings trả credential Messenger (.env ưu tiên hơn YAML).
 func (t *Ticket) MessengerSettings() MessengerSettings {
-	return MessengerSettings{
-		PageAccessToken: t.cfg.Messenger.PageAccessToken,
-		VerifyToken:     t.cfg.Messenger.VerifyToken,
-	}
+	return ResolveMessengerSettings(
+		t.agentID,
+		t.cfg.Messenger.PageAccessToken,
+		t.cfg.Messenger.VerifyToken,
+	)
 }
 
 // GuardConfig trả cấu hình guard từ YAML agent.

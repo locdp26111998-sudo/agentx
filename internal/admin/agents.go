@@ -7,8 +7,14 @@ import (
 	"strings"
 
 	"agentx/internal/store"
+	"agentx/internal/ticket"
 
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	yamlPlaceholderPageToken  = "YOUR_PAGE_ACCESS_TOKEN"
+	yamlPlaceholderVerifyToken = "YOUR_VERIFY_TOKEN"
 )
 
 const defaultEngine = "claude-code"
@@ -158,7 +164,10 @@ func (s *AgentStore) Save(id string, detail AgentDetail) error {
 		Soul:      detail.Soul,
 		Knowledge: detail.Knowledge,
 		Guard:     detail.Guard,
-		Messenger: detail.Messenger,
+		Messenger: MessengerCredentials{
+			PageAccessToken: yamlPlaceholderPageToken,
+			VerifyToken:     yamlPlaceholderVerifyToken,
+		},
 	}
 
 	data, err := yaml.Marshal(&cfg)
@@ -189,6 +198,7 @@ func (c *agentYAML) toDetail(id string) *AgentDetail {
 	if engineName == "" {
 		engineName = defaultEngine
 	}
+	ms := ticket.ResolveMessengerSettings(id, c.Messenger.PageAccessToken, c.Messenger.VerifyToken)
 	return &AgentDetail{
 		ID:        id,
 		Name:      c.Name,
@@ -197,7 +207,10 @@ func (c *agentYAML) toDetail(id string) *AgentDetail {
 		Soul:      c.Soul,
 		Knowledge: c.Knowledge,
 		Guard:     c.Guard,
-		Messenger: c.Messenger,
+		Messenger: MessengerCredentials{
+			PageAccessToken: ms.PageAccessToken,
+			VerifyToken:     ms.VerifyToken,
+		},
 	}
 }
 

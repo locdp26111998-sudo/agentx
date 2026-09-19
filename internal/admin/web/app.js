@@ -190,13 +190,14 @@
 
           <div class="form-section">
             <h3>Credential Messenger</h3>
+            <p class="form-hint">Token đọc từ <code>.env</code> trên server (AGENT_*_PAGE_ACCESS_TOKEN, MESSENGER_VERIFY_TOKEN). YAML chỉ giữ placeholder.</p>
             <div class="form-group">
-              <label>Page access token</label>
-              <input name="page_access_token" value="${escapeAttr(a.messenger?.page_access_token || "")}">
+              <label>Page access token (hiện tại từ env)</label>
+              <input name="page_access_token" readonly value="${escapeAttr(a.messenger?.page_access_token || "")}">
             </div>
             <div class="form-group">
-              <label>Verify token</label>
-              <input name="verify_token" value="${escapeAttr(a.messenger?.verify_token || "")}">
+              <label>Verify token (hiện tại từ env)</label>
+              <input name="verify_token" readonly value="${escapeAttr(a.messenger?.verify_token || "")}">
             </div>
           </div>
 

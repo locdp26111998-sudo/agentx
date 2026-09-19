@@ -13,4 +13,4 @@ guard:
     - "giết"
 messenger:
   page_access_token: "YOUR_PAGE_ACCESS_TOKEN"
-  verify_token: "agentx-secret-2024"
+  verify_token: "YOUR_VERIFY_TOKEN"
