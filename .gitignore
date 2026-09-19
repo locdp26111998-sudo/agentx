@@ -3,6 +3,7 @@ data/
 *.db
 .env
 .env.*
+!.env.example
 
 configs/goclaw.yaml
 configs/agents/*.yaml

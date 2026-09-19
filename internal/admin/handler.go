@@ -19,9 +19,10 @@ var webFS embed.FS
 
 // Handler gom API admin + static frontend.
 type Handler struct {
-	Agents  *AgentStore
+	Agents   *AgentStore
 	Sessions store.SessionStore
-	Logs    *LogHub
+	Logs     *LogHub
+	Auth     *Auth
 }
 
 // Register gắn route /admin và /api/admin/* lên mux.
@@ -32,22 +33,43 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	}
 	fileServer := http.FileServer(http.FS(webRoot))
 
+	mux.HandleFunc("/admin/login", h.handleLoginPage)
+	mux.HandleFunc("/api/admin/login", h.handleLoginAPI)
+	mux.HandleFunc("/api/admin/logout", h.handleLogoutAPI)
+
 	mux.HandleFunc("/admin", h.serveAdminIndex)
 	mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
-		// SPA: mọi /admin/* trả index.html (client routing qua hash)
-		if r.URL.Path == "/admin/" || !hasStaticExtension(r.URL.Path) {
-			h.serveAdminIndex(w, r)
+		if r.URL.Path == "/admin/login" {
+			h.handleLoginPage(w, r)
 			return
 		}
-		http.StripPrefix("/admin/", fileServer).ServeHTTP(w, r)
+		if hasStaticExtension(r.URL.Path) {
+			http.StripPrefix("/admin/", fileServer).ServeHTTP(w, r)
+			return
+		}
+		h.serveAdminIndex(w, r)
 	})
 
-	mux.HandleFunc("/api/admin/agents", h.handleAgents)
-	mux.HandleFunc("/api/admin/agents/", h.handleAgentByID)
-	mux.HandleFunc("/api/admin/logs/stream", h.handleLogStream)
+	mux.HandleFunc("/api/admin/agents", h.guardAdmin(h.handleAgents))
+	mux.HandleFunc("/api/admin/agents/", h.guardAdmin(h.handleAgentByID))
+	mux.HandleFunc("/api/admin/logs/stream", h.guardAdmin(h.handleLogStream))
+}
+
+func (h *Handler) guardAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !h.requireAdmin(w, r) {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "chưa đăng nhập"})
+			return
+		}
+		next(w, r)
+	}
 }
 
 func (h *Handler) serveAdminIndex(w http.ResponseWriter, r *http.Request) {
+	if !h.requireAdmin(w, r) {
+		http.Redirect(w, r, "/admin/login", http.StatusFound)
+		return
+	}
 	data, err := webFS.ReadFile("web/index.html")
 	if err != nil {
 		http.Error(w, "admin UI không tìm thấy", http.StatusInternalServerError)

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập — agentx</title>
+  <link rel="stylesheet" href="/admin/style.css">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <h1>agentx Admin</h1>
+    <p class="login-sub">Quản đốc · đăng nhập để tiếp tục</p>
+    <form id="login-form" class="login-form">
+      <label>
+        Tên đăng nhập
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label>
+        Mật khẩu
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="login-error" hidden></p>
+      <button type="submit" class="btn btn-primary login-submit">Đăng nhập</button>
+    </form>
+  </div>
+  <script>
+    (function () {
+      const form = document.getElementById("login-form");
+      const errEl = document.getElementById("login-error");
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        errEl.hidden = true;
+        const fd = new FormData(form);
+        const res = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            username: fd.get("username"),
+            password: fd.get("password"),
+          }),
+        });
+        if (res.ok) {
+          location.href = "/admin";
+          return;
+        }
+        const data = await res.json().catch(function () { return {}; });
+        errEl.textContent = data.error || "Đăng nhập thất bại";
+        errEl.hidden = false;
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -54,9 +54,25 @@
   window.addEventListener("hashchange", render);
   window.addEventListener("load", render);
 
+  const btnLogout = document.getElementById("btn-logout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", async function () {
+      await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
+      location.href = "/admin/login";
+    });
+  }
+
+  function redirectLogin() {
+    location.href = "/admin/login";
+  }
+
   // --- API ---
   async function apiGet(path) {
-    const res = await fetch(path);
+    const res = await fetch(path, { credentials: "same-origin" });
+    if (res.status === 401) {
+      redirectLogin();
+      throw new Error("unauthorized");
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || res.statusText);
@@ -68,8 +84,13 @@
     const res = await fetch(path, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify(body),
     });
+    if (res.status === 401) {
+      redirectLogin();
+      throw new Error("unauthorized");
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || res.statusText);

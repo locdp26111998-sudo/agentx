@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"agentx/internal/admin"
+	"agentx/internal/envfile"
 	"agentx/internal/engine"
 	"agentx/internal/goclaw"
 	"agentx/internal/guard"
@@ -41,8 +42,19 @@ type errorResponse struct {
 }
 
 func main() {
+	if err := envfile.Load(".env"); err != nil {
+		log.Fatalf("đọc .env: %v", err)
+	}
+
 	logHub := admin.NewLogHub()
 	admin.AttachLog(logHub)
+
+	adminAuth := admin.NewAuthFromEnv()
+	if adminAuth.Enabled() {
+		log.Printf("admin: bật đăng nhập (user=%q)", os.Getenv("ADMIN_USERNAME"))
+	} else {
+		log.Printf("admin: cảnh báo — chưa cấu hình ADMIN_USERNAME/ADMIN_PASSWORD, /admin mở không cần login")
+	}
 
 	rt := router.New(agentsDir)
 
@@ -81,6 +93,7 @@ func main() {
 		Agents:   &admin.AgentStore{Dir: agentsDir},
 		Sessions: st,
 		Logs:     logHub,
+		Auth:     adminAuth,
 	}
 	adminHandler.Register(mux)
 
